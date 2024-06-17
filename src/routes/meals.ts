@@ -18,13 +18,9 @@ export async function mealsRoutes(app: FastifyInstance) {
         date: z.coerce.date(),
       });
 
-      console.log("pass");
-
       const { name, description, isOnDiet, date } = createMealBodySchema.parse(
         request.body
       );
-
-      console.log("pass");
 
       await knex("meals").insert({
         id: randomUUID(),
@@ -36,6 +32,17 @@ export async function mealsRoutes(app: FastifyInstance) {
       });
 
       return reply.status(201).send();
+    }
+  );
+  app.get(
+    "/",
+    { preHandler: [checkSessionIdExists] },
+    async (request, reply) => {
+      const user = request.user;
+
+      const meals = await knex("meals").where("user_id", user?.id).select("*");
+
+      return reply.status(200).send({ meals });
     }
   );
 }
