@@ -26,7 +26,6 @@ export async function usersRoutes(app: FastifyInstance) {
     try {
       await knex("users").insert({
         id: randomUUID(),
-        session_id: randomUUID(),
         name,
         email,
         password: passwordHash,
@@ -38,5 +37,48 @@ export async function usersRoutes(app: FastifyInstance) {
     }
 
     return reply.status(201).send();
+  });
+
+  app.post("/sign-in", async (request, reply) => {
+    let { sessionId } = request.cookies;
+
+    if (sessionId) {
+      return reply.status(409).send({
+        error: "User already authenticated",
+      });
+    }
+
+    const signInBodySchema = z.object({
+      email: z.string().email(),
+      password: z.string().min(6),
+    });
+
+    const { email, password } = signInBodySchema.parse(request.body);
+
+    const user = await knex("users").where({ email }).first();
+
+    if (!user) {
+      return reply.status(404).send({
+        error: "User not found",
+      });
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+      return reply.status(401).send({
+        error: "Invalid password",
+      });
+    }
+
+    sessionId = randomUUID();
+    await knex("users").where({ email }).update({ session_id: sessionId });
+
+    reply.setCookie("sessionId", sessionId, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+
+    return reply.status(200).send();
   });
 }
