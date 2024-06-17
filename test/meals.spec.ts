@@ -18,18 +18,22 @@ describe("Meals Routes", () => {
   });
 
   it("should be able to create meal", async () => {
-    await request(app.server).post("/auth/sign-up").send({
-      name: "John Doe",
-      email: "johndoe@example.com",
-      password: "12345678",
-    });
+    await request(app.server)
+      .post("/auth/sign-up")
+      .send({
+        name: "John Doe",
+        email: "johndoe@example.com",
+        password: "12345678",
+      })
+      .expect(201);
 
     const signInResponse = await request(app.server)
       .post("/auth/sign-in")
       .send({
         email: "johndoe@example.com",
         password: "12345678",
-      });
+      })
+      .expect(200);
 
     const cookies = signInResponse.get("Set-Cookie");
 
@@ -46,34 +50,46 @@ describe("Meals Routes", () => {
   });
 
   it("should be able to list meals", async () => {
-    await request(app.server).post("/auth/sign-up").send({
-      name: "John Doe",
-      email: "johndoe@example.com",
-      password: "12345678",
-    });
+    await request(app.server)
+      .post("/auth/sign-up")
+      .send({
+        name: "John Doe",
+        email: "johndoe@example.com",
+        password: "12345678",
+      })
+      .expect(201);
 
     const signInResponse = await request(app.server)
       .post("/auth/sign-in")
       .send({
         email: "johndoe@example.com",
         password: "12345678",
-      });
+      })
+      .expect(200);
 
     const cookies = signInResponse.get("Set-Cookie");
 
-    await request(app.server).post("/meals").set("Cookie", cookies!).send({
-      name: "Burger",
-      description: "Delicious Burger",
-      isOnDiet: false,
-      date: new Date(),
-    });
+    await request(app.server)
+      .post("/meals")
+      .set("Cookie", cookies!)
+      .send({
+        name: "Burger",
+        description: "Delicious Burger",
+        isOnDiet: false,
+        date: new Date(),
+      })
+      .expect(201);
 
-    await request(app.server).post("/meals").set("Cookie", cookies!).send({
-      name: "Pizza",
-      description: "Delicious Pizza",
-      isOnDiet: false,
-      date: new Date(),
-    });
+    await request(app.server)
+      .post("/meals")
+      .set("Cookie", cookies!)
+      .send({
+        name: "Pizza",
+        description: "Delicious Pizza",
+        isOnDiet: false,
+        date: new Date(),
+      })
+      .expect(201);
 
     const listMealsResponse = await request(app.server)
       .get("/meals")
@@ -141,6 +157,50 @@ describe("Meals Routes", () => {
         isOnDiet: true,
         date: new Date(),
       })
+      .expect(204);
+  });
+
+  it("should be able to delete a meal", async () => {
+    await request(app.server)
+      .post("/auth/sign-up")
+      .send({
+        name: "John Doe",
+        email: "johndoe@example.com",
+        password: "12345678",
+      })
+      .expect(201);
+
+    const signInResponse = await request(app.server)
+      .post("/auth/sign-in")
+      .send({
+        email: "johndoe@example.com",
+        password: "12345678",
+      })
+      .expect(200);
+
+    const cookies = signInResponse.get("Set-Cookie");
+
+    await request(app.server)
+      .post("/meals")
+      .set("Cookie", cookies!)
+      .send({
+        name: "Burger",
+        description: "Delicious Burger",
+        isOnDiet: false,
+        date: new Date(),
+      })
+      .expect(201);
+
+    const listMealsResponse = await request(app.server)
+      .get("/meals")
+      .set("Cookie", cookies!)
+      .expect(200);
+
+    const mealId = listMealsResponse.body.meals[0].id;
+
+    await request(app.server)
+      .delete(`/meals/${mealId}`)
+      .set("Cookie", cookies!)
       .expect(204);
   });
 });

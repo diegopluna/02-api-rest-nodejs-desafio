@@ -29,11 +29,14 @@ describe("Auth Routes", () => {
   });
 
   it("should be able to authenticate user", async () => {
-    await request(app.server).post("/auth/sign-up").send({
-      name: "John Doe",
-      email: "johndoe@example.com",
-      password: "12345678",
-    });
+    await request(app.server)
+      .post("/auth/sign-up")
+      .send({
+        name: "John Doe",
+        email: "johndoe@example.com",
+        password: "12345678",
+      })
+      .expect(201);
 
     const response = await request(app.server)
       .post("/auth/sign-in")
