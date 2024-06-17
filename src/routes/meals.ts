@@ -131,4 +131,42 @@ export async function mealsRoutes(app: FastifyInstance) {
       return reply.status(200).send({ meal });
     }
   );
+
+  app.get(
+    "/summary",
+    { preHandler: [checkSessionIdExists] },
+    async (request, reply) => {
+      const user = request.user;
+
+      const meals = await knex("meals").where("user_id", user?.id).select("*");
+
+      const totalMeals = meals.length;
+      const totalMealsOnDiet = meals.filter((meal) => meal.is_on_diet).length;
+      const totalMealsNotOnDiet = meals.filter(
+        (meal) => !meal.is_on_diet
+      ).length;
+      const onDietMealsStreak = meals.reduce(
+        (acc, meal) => {
+          if (meal.is_on_diet) {
+            acc.current += 1;
+            acc.longest = Math.max(acc.current, acc.longest);
+          } else {
+            acc.current = 0;
+          }
+
+          return acc;
+        },
+        { current: 0, longest: 0 }
+      );
+
+      const summary = {
+        totalMeals,
+        totalMealsOnDiet,
+        totalMealsNotOnDiet,
+        onDietMealsStreak: onDietMealsStreak.longest,
+      };
+
+      return reply.status(200).send({ summary });
+    }
+  );
 }

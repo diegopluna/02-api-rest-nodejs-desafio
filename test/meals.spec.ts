@@ -255,4 +255,59 @@ describe("Meals Routes", () => {
       })
     );
   });
+
+  it("should be able to view a summary of meals", async () => {
+    await request(app.server)
+      .post("/auth/sign-up")
+      .send({
+        name: "John Doe",
+        email: "johndoe@example.com",
+        password: "12345678",
+      })
+      .expect(201);
+
+    const signInResponse = await request(app.server)
+      .post("/auth/sign-in")
+      .send({
+        email: "johndoe@example.com",
+        password: "12345678",
+      })
+      .expect(200);
+
+    const cookies = signInResponse.get("Set-Cookie");
+
+    await request(app.server)
+      .post("/meals")
+      .set("Cookie", cookies!)
+      .send({
+        name: "Burger",
+        description: "Delicious Burger",
+        isOnDiet: false,
+        date: new Date(),
+      })
+      .expect(201);
+
+    await request(app.server)
+      .post("/meals")
+      .set("Cookie", cookies!)
+      .send({
+        name: "Pizza",
+        description: "Delicious Pizza",
+        isOnDiet: false,
+        date: new Date(),
+      })
+      .expect(201);
+
+    const summaryMealsResponse = await request(app.server)
+      .get("/meals/summary")
+      .set("Cookie", cookies!)
+      .expect(200);
+
+    expect(summaryMealsResponse.body.summary).toEqual({
+      totalMeals: 2,
+      totalMealsOnDiet: 0,
+      totalMealsNotOnDiet: 2,
+      onDietMealsStreak: 0,
+    });
+  });
 });
