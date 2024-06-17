@@ -93,4 +93,54 @@ describe("Meals Routes", () => {
       }),
     ]);
   });
+
+  it("should be able to update meal", async () => {
+    await request(app.server)
+      .post("/auth/sign-up")
+      .send({
+        name: "John Doe",
+        email: "johndoe@example.com",
+        password: "12345678",
+      })
+      .expect(201);
+
+    const signInResponse = await request(app.server)
+      .post("/auth/sign-in")
+      .send({
+        email: "johndoe@example.com",
+        password: "12345678",
+      })
+      .expect(200);
+
+    const cookies = signInResponse.get("Set-Cookie");
+
+    await request(app.server)
+      .post("/meals")
+      .set("Cookie", cookies!)
+      .send({
+        name: "Burger",
+        description: "Delicious Burger",
+        isOnDiet: false,
+        date: new Date(),
+      })
+      .expect(201);
+
+    const listMealsResponse = await request(app.server)
+      .get("/meals")
+      .set("Cookie", cookies!)
+      .expect(200);
+
+    const mealId = listMealsResponse.body.meals[0].id;
+
+    await request(app.server)
+      .put(`/meals/${mealId}`)
+      .set("Cookie", cookies!)
+      .send({
+        name: "Salad",
+        description: "Delicious Salad",
+        isOnDiet: true,
+        date: new Date(),
+      })
+      .expect(204);
+  });
 });

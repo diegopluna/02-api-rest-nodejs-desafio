@@ -45,4 +45,42 @@ export async function mealsRoutes(app: FastifyInstance) {
       return reply.status(200).send({ meals });
     }
   );
+  app.put(
+    "/:id",
+    { preHandler: [checkSessionIdExists] },
+    async (request, reply) => {
+      const mealParamsSchema = z.object({
+        id: z.string().uuid(),
+      });
+
+      const { id } = mealParamsSchema.parse(request.params);
+      const user = request.user;
+
+      const createMealBodySchema = z.object({
+        name: z.string(),
+        description: z.string(),
+        isOnDiet: z.boolean(),
+        date: z.coerce.date(),
+      });
+
+      const { name, description, isOnDiet, date } = createMealBodySchema.parse(
+        request.body
+      );
+
+      const meal = await knex("meals").where("id", id).first();
+
+      if (!meal) {
+        throw reply.status(404).send({ error: "Meal not found" });
+      }
+
+      await knex("meals").where({ id: id, user_id: user?.id }).update({
+        name,
+        description,
+        is_on_diet: isOnDiet,
+        date: date.getTime(),
+      });
+
+      return reply.status(204).send();
+    }
+  );
 }
